@@ -15,7 +15,7 @@ main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;
 @media(max-width:980px){main{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px}
 h2{margin:0 0 8px;font-size:14px}
-canvas{width:100%;display:block;border-radius:6px;border:1px solid var(--ln);touch-action:none}
+canvas{display:block;max-width:100%;max-height:80vh;margin:0 auto;border-radius:6px;border:1px solid var(--ln);touch-action:none}
 .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
 button,select{font:inherit;border:1px solid var(--ln);background:#f3f7f7;color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
 button:hover{background:#e6eeee}
@@ -67,7 +67,7 @@ button.on{background:var(--org);border-color:var(--org);color:#fff}
 <main>
 <section class="card">
   <h2>Arena</h2>
-  <canvas id="cv" width="2000" height="1000" aria-label="Arena simulasi robot"></canvas>
+  <canvas id="cv" width="1200" height="1600" aria-label="Arena simulasi robot"></canvas>
   <div class="bar">
     <button class="p" id="bRun">Mulai</button>
     <button id="bReset">Reset robot</button>
@@ -75,9 +75,9 @@ button.on{background:var(--org);border-color:var(--org);color:#fff}
     <button id="bClear">Hapus semua kubus</button>
     <label>Kecepatan <select id="sSpd"><option value=".5">0,5x</option><option value="1" selected>1x</option><option value="2">2x</option><option value="4">4x</option></select></label>
     <label><input type="checkbox" id="cTrail" checked> Jejak</label>
-    <label>Lintasan <select id="sTrk"><option value="curve">Kurva S + finish</option><option value="siku">Siku 90° (eksperimen)</option></select></label>
+    <label><input type="checkbox" id="cCam"> Zoom ke robot</label>
   </div>
-  <p class="note" id="hint">Seret kubus untuk memindahkannya. Klik “Tambah kubus”, lalu klik arena untuk menaruhnya di tempat lain.</p>
+  <p class="note" id="hint">Lintasan Mechatronics Festival 2026: robot start di kotak kanan bawah. Seret kubus untuk memindahkannya. Klik “Tambah kubus”, lalu klik arena untuk menaruhnya di tempat lain.</p>
   <div class="tel">
     <div><small>Fungsi yang berjalan</small><span class="chip" id="vSt">BOOT</span></div>
     <div><small>Sensor garis A0–A4 dan objek A5</small><div class="leds" id="leds"></div></div>
@@ -335,26 +335,41 @@ void putar90(int arah) {
 
 <script>
 const $=i=>document.getElementById(i),cv=$('cv'),g=cv.getContext('2d');
-const W=2000,H=1000,BW=120,VMAX=310,SRC=$('src').textContent.trim(),ed=$('ed');
+const W=2400,H=3200,BW=120,VMAX=310,SRC=$('src').textContent.trim(),ed=$('ed');
 ed.value=SRC;
 const cst=(v,a,b)=>Math.max(a,Math.min(b,v));
-/* ---------- lintasan ---------- */
-const TR={curve:{pl:null,fin:[[1700,560],[1700,680]]},siku:{pl:[[[100,500],[700,500],[700,250],[1300,250],[1300,700],[1700,700]]],fin:[[1700,640],[1700,760]]}};
-let segs=[];
-function track(k){const t=TR[k];
-  if(!t.pl){const c=[[100,500],[500,500],[800,500],[1000,380],[1250,380],[1450,620],[1600,620],[1700,620]],Q=[c[0],...c,c[c.length-1]],p=[];
-    for(let i=1;i<Q.length-2;i++)for(let u=0;u<1;u+=.1){const[a,b,e,d]=[Q[i-1],Q[i],Q[i+1],Q[i+2]];p.push([0,1].map(n=>.5*(2*b[n]+(-a[n]+e[n])*u+(2*a[n]-5*b[n]+4*e[n]-d[n])*u*u+(-a[n]+3*b[n]-3*e[n]+d[n])*u**3)))}
-    p.push(c[c.length-1]);t.pl=[p]}
-  t.cur=k;segs=[];window.curTrack=t;[...t.pl,t.fin].forEach(p=>{for(let i=0;i<p.length-1;i++)segs.push([...p[i],...p[i+1]])})}
-function dTrack(x,y){let m=1e9;for(const[ax,ay,bx,by]of segs){const dx=bx-ax,dy=by-ay;let t=cst(((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy),0,1);const d=Math.hypot(x-ax-t*dx,y-ay-t*dy);if(d<m)m=d}return m}
+/* ---------- lintasan (Mechatronics Festival 2026) ---------- */
+const TR=(()=>{
+  const P=[];let c;const M=(x,y)=>{c=[[x,y]];P.push(c)},L=(x,y)=>c.push([x,y]);
+  const wv=(x0,x1,y,a)=>{for(let i=1;i<=12;i++){const t=i/12;L(x0+(x1-x0)*t,y+a*Math.sin(Math.PI*t))}};
+  const cn=(x,y,ix,iy,ox,oy,r)=>{const sx=x-ix*r,sy=y-iy*r;L(sx,sy);for(let i=1;i<=8;i++){const t=i/8,u=1-t;L(u*u*sx+2*u*t*x+t*t*(x+ox*r),u*u*sy+2*u*t*y+t*t*(y+oy*r))}};
+  const dash=(xa,xb,y)=>{const d=Math.sign(xb-xa);for(let x=xa;(xb-x)*d>0;x+=d*52){M(x,y);L(x+d*Math.min(36,Math.abs(xb-x)),y)}};
+  M(225,126);L(380,126);wv(380,490,126,37);L(595,126);wv(595,705,126,-37);L(808,126);wv(808,920,126,37);L(1092,126);
+  cn(1125,126,1,0,0,1,33);L(1125,333);cn(1125,366,0,1,-1,0,33);L(770,366);dash(768,410,366);
+  M(410,366);[[203,366],[100,404],[100,534],[203,570],[537,570],[603,503],[698,603],[803,500],[865,568],[1090,568]].forEach(p=>L(...p));
+  cn(1123,568,1,0,0,1,33);L(1123,773);cn(1123,806,0,1,-1,0,33);L(983,806);M(937,806);L(890,806);dash(888,718,806);
+  const rot=p=>[1218-p[0],1615-p[1]],k=p=>[p[0]*2,p[1]*2],bx=a=>a.map(v=>v*2);
+  const paths=[...P,...P.map(p=>p.map(rot))].map(p=>p.map(k)),segs=[];
+  paths.forEach(p=>{for(let i=0;i<p.length-1;i++)segs.push([...p[i],...p[i+1]])});
+  return{paths,segs,boxes:[[91,85,225,173],[993,1442,1127,1530],[500,718,715,878]].map(bx),rings:[[960,806,23],[258,809,23]].map(bx),
+    zones:[[810,262,917,332,0],[329,601,436,671,1],[781,943,888,1013,0],[300,1283,407,1353,1]].map(z=>[...bx(z.slice(0,4)),z[4]]),
+    blue:[[813,342,388],[434,548,594],[784,1022,1068],[405,1228,1274]].map(bx),
+    yel:[[1065,1182,231,1022,1053],[47,157,467,168,200],[1069,1178,687,1030,1060],[38,150,927,158,190],[1060,1170,1148,1018,1048],[37,152,1383,165,195]].map(bx)}})();
+function blackAt(x,y){
+  for(const b of TR.boxes)if(x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3])return true;
+  for(const r of TR.rings)if(Math.abs(Math.hypot(x-r[0],y-r[1])-r[2])<=5)return true;
+  const h=hw.lw/2;
+  for(const[ax,ay,bx,by]of TR.segs){const dx=bx-ax,dy=by-ay;let t=cst(((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy),0,1);if(Math.hypot(x-ax-t*dx,y-ay-t*dy)<=h)return true}
+  return false}
+
 /* ---------- state ---------- */
 const hw={lw:20,sp:15,rng:50,trim:1.09,so:20};
-let R={},cubes=[{x:450,y:500,hx:450,hy:500,a:0,held:false}],run=false,T=0,co=null,API=null,trail=[],tick=0,place=false,drag=null,spd=1,fnName='-';
+let R={},cubes=[{x:810,y:2496,hx:810,hy:2496,a:0,held:false},{x:1568,y:2090,hx:1568,hy:2090,a:0,held:false}],run=false,T=0,co=null,API=null,trail=[],tick=0,place=false,drag=null,spd=1,fnName='-';
 const mot={3:0,4:0},ms=()=>Math.round(T*1000);
 function out(s,c){const d=document.createElement('div');if(c)d.className=c;d.textContent=s;$('ser').appendChild(d);$('ser').scrollTop=1e9}
-function reset(){R={x:150,y:500,th:0,sv:0,tg:0,warn:0};cubes.forEach(c=>{c.x=c.hx;c.y=c.hy;c.a=0;c.held=false});T=0;mot[3]=mot[4]=0;trail=[];fnName='-'}
+function reset(){R={x:2000,y:2974,th:Math.PI,sv:0,tg:0,warn:0};cubes.forEach(c=>{c.x=c.hx;c.y=c.hy;c.a=0;c.held=false});T=0;mot[3]=mot[4]=0;trail=[];fnName='-'}
 const fw=()=>[Math.cos(R.th),Math.sin(R.th),-Math.sin(R.th),Math.cos(R.th)];
-function lineS(i){const[f0,f1,r0,r1]=fw(),lo=(i-2)*hw.sp;return dTrack(R.x+f0*hw.so+r0*lo,R.y+f1*hw.so+r1*lo)<=hw.lw/2?1:0}
+function lineS(i){const[f0,f1,r0,r1]=fw(),lo=(i-2)*hw.sp;return blackAt(R.x+f0*hw.so+r0*lo,R.y+f1*hw.so+r1*lo)?1:0}
 function objS_(){const[f0,f1,r0,r1]=fw();return cubes.some(c=>{if(c.held)return false;const dx=c.x-R.x,dy=c.y-R.y,fx=dx*f0+dy*f1,ly=dx*r0+dy*r1;return fx-20<=105+hw.rng&&fx+20>=105&&Math.abs(ly)<=32})?0:1}
 /* ---------- runtime Arduino virtual ---------- */
 class AF_DCMotor{constructor(p){this.p=p;this.s=0}setSpeed(s){this.s=cst(s,0,255)}run(d){mot[this.p]=d===1?this.s:d===2?-this.s:0}}
@@ -398,24 +413,36 @@ function phys(dt){
   if(++tick%6===0&&trail.length<5000)trail.push([R.x,R.y])}
 function step(){T+=.005;try{if(co.next().done)run=false}catch(e){out('runtime error: '+e.message,'e');run=false;sync()}phys(.005)}
 /* ---------- gambar ---------- */
+let cam={s:.5,tx:0,ty:0};
+const rc=(x0,y0,x1,y1)=>g.fillRect(x0,y0,x1-x0,y1-y0);
+function txt(t,x,y,col,rot,font){g.save();g.translate(x,y);g.rotate(rot||0);g.fillStyle=col;g.font=font;g.textAlign='center';g.fillText(t,0,0);g.restore()}
 function draw(){
-  g.fillStyle='#f7f9f8';g.fillRect(0,0,W,H);g.strokeStyle='#e0e8e6';g.lineWidth=2;
-  for(let x=0;x<=W;x+=100){g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}
-  for(let y=0;y<=H;y+=100){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()}
-  const t=curTrack;g.lineJoin='round';g.lineCap='butt';g.strokeStyle='#14191c';g.lineWidth=hw.lw;
-  [...t.pl,t.fin].forEach(p=>{g.beginPath();p.forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.stroke()});
-  g.fillStyle='#14262c';g.font='600 26px "Segoe UI",sans-serif';g.fillText('Mulai',70,440);g.fillText('Finish (11111)',1560,t.fin[0][1]-20);
-  if($('cTrail').checked&&trail.length>1){g.strokeStyle='rgba(36,71,214,.45)';g.lineWidth=4;g.beginPath();trail.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke()}
-  cubes.forEach(c=>{g.save();g.translate(c.x,c.y);g.rotate(c.a);g.fillStyle='#e3a21a';g.fillRect(-20,-20,40,40);g.strokeStyle='#8a5f06';g.lineWidth=3;g.strokeRect(-20,-20,40,40);g.restore()});
+  const f=$('cCam').checked,s=f?cv.width/W*3.4:cv.width/W;
+  cam={s,tx:f?cv.width/2-R.x*s:0,ty:f?cv.height/2-R.y*s:0};
+  g.setTransform(1,0,0,1,0,0);g.fillStyle='#dfe6e6';g.fillRect(0,0,cv.width,cv.height);
+  g.setTransform(s,0,0,s,cam.tx,cam.ty);g.fillStyle='#fff';g.fillRect(0,0,W,H);
+  const F='700 22px "Segoe UI",sans-serif';
+  TR.zones.forEach(z=>{g.fillStyle='#ff5a6e';rc(z[0],z[1],z[2],z[3]);txt('DROP ZONE',(z[0]+z[2])/2,z[4]?z[3]+26:z[1]-10,'#14262c',z[4]?Math.PI:0,F)});
+  TR.yel.forEach(y=>{g.fillStyle='#fbc55f';rc(y[0],y[2]-8,y[1],y[2]+8);g.fillStyle='#9a9a9a';rc(y[3],y[2]-10,y[4],y[2]+10)});
+  g.fillStyle='#1e9fd4';TR.blue.forEach(b=>rc(b[0]-8,b[1],b[0]+8,b[2]));
+  g.lineJoin='round';g.lineCap='butt';g.strokeStyle='#14191c';g.lineWidth=hw.lw;
+  TR.paths.forEach(p=>{g.beginPath();p.forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.stroke()});
+  g.lineWidth=10;TR.rings.forEach(r=>{g.beginPath();g.arc(r[0],r[1],r[2],0,7);g.stroke()});
+  g.fillStyle='#14191c';TR.boxes.forEach(b=>rc(b[0],b[1],b[2],b[3]));
+  txt('START',2120,3100,'#14262c',0,'700 56px "Segoe UI",sans-serif');txt('START',316,128,'#14262c',Math.PI,'700 56px "Segoe UI",sans-serif');
+  txt('FINISH',1215,1620,'#fff',.45,'800 90px "Segoe UI",sans-serif');
+  if($('cTrail').checked&&trail.length>1){g.strokeStyle='rgba(36,71,214,.55)';g.lineWidth=6;g.beginPath();trail.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke()}
+  cubes.forEach(c=>{g.save();g.translate(c.x,c.y);g.rotate(c.a);g.fillStyle='#e3a21a';g.fillRect(-20,-20,40,40);g.strokeStyle='#8a5f06';g.lineWidth=4;g.strokeRect(-20,-20,40,40);g.restore()});
   g.save();g.translate(R.x,R.y);g.rotate(R.th);const o=objS_()===0;
   g.fillStyle=o?'rgba(214,64,47,.22)':'rgba(36,71,214,.14)';g.beginPath();g.moveTo(105,0);g.lineTo(105+hw.rng,-14);g.lineTo(105+hw.rng,14);g.closePath();g.fill();
   g.fillStyle='#222';g.fillRect(-25,-72,50,18);g.fillRect(-25,54,50,18);
   g.fillStyle='#ef7b2a';g.beginPath();g.roundRect(-50,-52,130,104,10);g.fill();
-  g.fillStyle='#14262c';g.fillRect(55,-14,30,28);g.font='700 20px sans-serif';g.fillText('UNO',-34,7);
+  g.fillStyle='#14262c';g.fillRect(55,-14,30,28);g.font='700 20px sans-serif';g.textAlign='left';g.fillText('UNO',-34,7);
   const gap=70-cst(R.sv/95,0,1)*32;g.fillRect(100,-gap/2-7,62,7);g.fillRect(100,gap/2,62,7);
   g.fillStyle='#2b3b40';g.fillRect(hw.so-5,-45,10,90);
   for(let i=0;i<5;i++){g.fillStyle=lineS(i)?'#ff3b2a':'#5a3a36';g.beginPath();g.arc(hw.so-2,(i-2)*hw.sp,4,0,7);g.fill()}
   g.fillStyle=o?'#d6402f':'#2447d6';g.fillRect(100,-4,8,8);g.restore()}
+
 /* ---------- UI ---------- */
 function bar(id,v){const e=$(id),w=Math.abs(v)/255*50;e.style.width=w+'%';e.style.left=(v>=0?50:50-w)+'%';e.style.background=v<0?'#d6402f':'#1f9d6b'}
 function sync(){$('bRun').textContent=run?'Jeda':'Mulai'}
@@ -442,21 +469,20 @@ $('bReset').onclick=()=>{$('ser').innerHTML='';load(false);out('Reset. Tekan Mul
 $('bAdd').onclick=()=>{place=!place;$('bAdd').classList.toggle('on',place);cv.style.cursor=place?'crosshair':'default'};
 $('bClear').onclick=()=>{cubes=[]};
 $('sSpd').onchange=e=>spd=+e.target.value;
-$('sTrk').onchange=e=>{track(e.target.value);$('ser').innerHTML='';load(false)};
 $('bVer').onclick=()=>{if(build())out('Verify OK: sketch berhasil diterjemahkan dan siap di-upload.','t')};
 $('bUp').onclick=()=>{$('ser').innerHTML='';out('Upload selesai. Robot reset.','t');syncQ();load(true)};
 $('bOrig').onclick=()=>{ed.value=SRC;gut();syncQ()};
 ed.oninput=gut;ed.onscroll=()=>{$('gut').scrollTop=ed.scrollTop;$('hl').scrollTop=ed.scrollTop;$('hl').scrollLeft=ed.scrollLeft};
 ed.onkeydown=e=>{if(e.key==='Tab'){e.preventDefault();ed.setRangeText('  ',ed.selectionStart,ed.selectionEnd,'end')}};
-const wp=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]};
+const wp=e=>{const r=cv.getBoundingClientRect();return[((e.clientX-r.left)*cv.width/r.width-cam.tx)/cam.s,((e.clientY-r.top)*cv.height/r.height-cam.ty)/cam.s]};
 cv.onpointerdown=e=>{const[x,y]=wp(e);
   if(place){cubes.push({x,y,hx:x,hy:y,a:0,held:false});place=false;$('bAdd').classList.remove('on');cv.style.cursor='default';return}
-  drag=cubes.find(c=>!c.held&&Math.abs(c.x-x)<30&&Math.abs(c.y-y)<30)||null;if(drag)cv.setPointerCapture(e.pointerId)};
+  drag=cubes.find(c=>!c.held&&Math.abs(c.x-x)<70&&Math.abs(c.y-y)<70)||null;if(drag)cv.setPointerCapture(e.pointerId)};
 cv.onpointermove=e=>{if(!drag)return;const[x,y]=wp(e);drag.x=drag.hx=x;drag.y=drag.hy=y};
 cv.onpointerup=()=>drag=null;
 let last=performance.now();
 function frame(n){const dt=Math.min(.1,(n-last)/1000);last=n;if(run){let a=dt*spd;while(a>=.005&&run){step();a-=.005}}draw();ui();requestAnimationFrame(frame)}
-track('curve');gut();syncQ();load(false);out('Tekan Mulai untuk menjalankan kode di robot.','t');requestAnimationFrame(frame);
+gut();syncQ();load(false);out('Tekan Mulai untuk menjalankan kode di robot.','t');requestAnimationFrame(frame);
 </script>
 </body>
 </html>
