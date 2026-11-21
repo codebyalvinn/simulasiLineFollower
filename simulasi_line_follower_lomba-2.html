@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab Line Follower Transporter</title>
+<style>
+:root{--bg:#e4eaeb;--ink:#14262c;--mut:#5a6d73;--card:#fff;--ln:#cfd9db;--acc:#2447d6;--org:#ef7b2a;--ok:#1f9d6b;--bad:#d6402f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Segoe UI Variable","Segoe UI",system-ui,sans-serif}
+header{background:var(--ink);color:#fff;padding:14px 20px;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+h1{margin:0;font-size:20px;letter-spacing:-.01em}
+header p{margin:0;color:#9fb4ba;font-size:13px}
+main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;padding:14px;max-width:1500px;margin:auto}
+@media(max-width:980px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px}
+h2{margin:0 0 8px;font-size:14px}
+canvas{width:100%;display:block;border-radius:6px;border:1px solid var(--ln);touch-action:none}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+button,select{font:inherit;border:1px solid var(--ln);background:#f3f7f7;color:var(--ink);padding:6px 12px;border-radius:6px;cursor:pointer}
+button:hover{background:#e6eeee}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff}
+button.p:hover{background:#1b38b0}
+button.on{background:var(--org);border-color:var(--org);color:#fff}
+.tel{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.tel>div{border:1px solid var(--ln);border-radius:8px;padding:8px 10px}
+.tel small{display:block;color:var(--mut);font-size:12px}
+.tel b{font:600 16px ui-monospace,Consolas,monospace}
+.chip{display:inline-block;padding:2px 10px;border-radius:99px;background:var(--acc);color:#fff;font:700 14px ui-monospace,Consolas,monospace}
+.leds{display:flex;gap:6px;align-items:center;margin-top:3px}
+.led{width:16px;height:16px;border-radius:50%;background:#e4c9c5;border:1px solid #b99}
+.led.on{background:var(--bad);box-shadow:0 0 8px var(--bad)}
+.led.obj{border-radius:4px}
+.led.obj.on{background:var(--acc);box-shadow:0 0 8px var(--acc)}
+.mb{position:relative;height:10px;background:#e8eef0;border-radius:5px;margin-top:5px}
+.mb i{position:absolute;top:0;height:100%;background:var(--ok);border-radius:5px}
+.mb:after{content:"";position:absolute;left:50%;top:-2px;height:14px;border-left:1px solid var(--ink)}
+.ide{background:#0f1c21;border-color:#0f1c21;color:#d8e4e7}
+.ide h2{color:#fff;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.ide h2 span{font:500 12px ui-monospace,Consolas,monospace;color:#8fb0b8}
+.ide button{background:#1c3139;border-color:#2b4752;color:#d8e4e7;padding:4px 10px}
+.ide button:hover{background:#27434d}
+.ide button.p{background:var(--org);border-color:var(--org);color:#fff}
+.ed{display:flex;height:470px;border:1px solid #2b4752;border-radius:6px;overflow:hidden;background:#0a1417}
+.ed pre,.ed textarea{margin:0;font:12.5px/1.5 ui-monospace,"Cascadia Code",Consolas,monospace;padding:8px 0}
+.ed pre{color:#4d6c75;text-align:right;padding-right:8px;padding-left:8px;overflow:hidden;user-select:none;border-right:1px solid #1c3139}
+.cw{position:relative;flex:1;overflow:hidden}
+.ed textarea{position:absolute;inset:0;width:100%;height:100%;background:transparent;color:transparent;caret-color:#fff;border:0;resize:none;white-space:pre;overflow:auto;padding-left:10px;tab-size:2}
+.ed textarea::selection{background:rgba(79,195,201,.35)}
+.ed #hl{position:absolute;inset:0;text-align:left;border:0;padding:8px 0 24px 10px;color:#d8e4e7;pointer-events:none;tab-size:2}
+#hl i{font-style:normal}#hl .c{font-style:italic}
+.k{color:#4fc3c9}.n{color:#7cc4ff}.b{color:#ff9a3c}.u{color:#ffd166}.v{color:#f2e18f}.c{color:#6f8f98}.p{color:#c792ea}.s{color:#a5d6a7}
+.lg{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0 0;font:12px ui-monospace,Consolas,monospace}
+#ser{height:150px;overflow:auto;margin:8px 0 0;background:#0a1417;border:1px solid #2b4752;border-radius:6px;padding:8px;font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap}
+#ser .e{color:#ff8f80}#ser .t{color:#6f9aa5}
+.hw{grid-column:1/-1}
+.sl{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 20px}
+.sl label{display:flex;justify-content:space-between;font-size:13px}
+.sl output{font:600 13px ui-monospace,Consolas,monospace;color:var(--acc)}
+.sl input{width:100%;accent-color:var(--acc)}
+.note{color:var(--mut);font-size:12.5px;margin:8px 0 0}
+</style>
+</head>
+<body>
+<header><h1>Lab Line Follower Transporter</h1><p>Menjalankan kode lomba (pola sensor, pick and place). Ubah kode atau slider, lalu Upload.</p></header>
+<main>
+<section class="card">
+  <h2>Arena</h2>
+  <canvas id="cv" width="2000" height="1000" aria-label="Arena simulasi robot"></canvas>
+  <div class="bar">
+    <button class="p" id="bRun">Mulai</button>
+    <button id="bReset">Reset robot</button>
+    <button id="bAdd">Tambah kubus</button>
+    <button id="bClear">Hapus semua kubus</button>
+    <label>Kecepatan <select id="sSpd"><option value=".5">0,5x</option><option value="1" selected>1x</option><option value="2">2x</option><option value="4">4x</option></select></label>
+    <label><input type="checkbox" id="cTrail" checked> Jejak</label>
+    <label>Lintasan <select id="sTrk"><option value="curve">Kurva S + finish</option><option value="siku">Siku 90° (eksperimen)</option></select></label>
+  </div>
+  <p class="note" id="hint">Seret kubus untuk memindahkannya. Klik “Tambah kubus”, lalu klik arena untuk menaruhnya di tempat lain.</p>
+  <div class="tel">
+    <div><small>Fungsi yang berjalan</small><span class="chip" id="vSt">BOOT</span></div>
+    <div><small>Sensor garis A0–A4 dan objek A5</small><div class="leds" id="leds"></div></div>
+    <div><small>bacaSensor() / memori_arah</small><b id="vErr">00000 / 0</b></div>
+    <div><small>Motor kiri <b id="vL">0</b></small><div class="mb"><i id="mL"></i></div></div>
+    <div><small>Motor kanan <b id="vR">0</b></small><div class="mb"><i id="mR"></i></div></div>
+    <div><small>Servo penjepit</small><b id="vSv">40°</b></div>
+    <div><small>Waktu</small><b id="vT">0.0 s</b></div>
+  </div>
+</section>
+
+<section class="card ide">
+  <h2>Arduino IDE virtual <span>line_follower_transporter.ino</span></h2>
+  <div class="bar" style="margin:0 0 8px">
+    <button id="bVer">Verify</button><button class="p" id="bUp">Upload ke robot</button><button id="bOrig">Kode awal</button>
+  </div>
+  <div class="ed"><pre id="gut"></pre><div class="cw"><pre id="hl" aria-hidden="true"></pre><textarea id="ed" spellcheck="false" aria-label="Editor kode Arduino"></textarea></div></div>
+  <div class="lg"><span class="k">kata kunci/tipe</span><span class="n">konstanta</span><span class="b">fungsi Arduino</span><span class="u">fungsi buatan sendiri</span><span class="v">angka</span><span class="p">#include/#define</span><span class="c">komentar</span></div>
+  <div id="ser" role="log" aria-label="Serial monitor"></div>
+  <p class="note" style="color:#8fb0b8">Kode C++ ini diterjemahkan ke JavaScript, jadi angka, nilai gerak() di dalam switch, dan urutan pick and place bisa diubah. Gaya kode yang didukung sama seperti sketch ini.</p>
+</section>
+
+<section class="card hw">
+  <h2>Parameter cepat <small style="font-weight:400;color:var(--mut)">(mengubah angka di kode lalu upload otomatis)</small></h2>
+  <div class="sl" id="qk"></div>
+  <h2 style="margin-top:16px">Perangkat keras</h2>
+  <div class="sl" id="sl"></div>
+  <p class="note">Motor kanan 1,09 berarti motor kanan 9% lebih kuat, sesuai kompensasi BASE_KIRI 125 dan BASE_KANAN 115. Jarak sensor garis dari poros sangat mempengaruhi belok siku (putar90).</p>
+</section>
+</main>
+
+<script type="text/plain" id="src">#include <AFMotor.h>
+#include <Servo.h>
+
+// 1. PENGATURAN MOTOR, SERVO & SENSOR
+AF_DCMotor motorKiri(3);   // Motor kiri di port M3
+AF_DCMotor motorKanan(4);  // Motor kanan di port M4
+Servo gripper;             // Servo capit
+
+// Arah putaran motor
+#define KIRI_MAJU    FORWARD
+#define KIRI_MUNDUR  BACKWARD
+#define KANAN_MAJU   BACKWARD
+#define KANAN_MUNDUR FORWARD
+
+// Pin servo & sensor objek
+#define PIN_SERVO        9
+#define SENSOR_OBJEK     A5
+#define OBJEK_TERDETEKSI LOW   // Modul IR mengeluarkan LOW saat ada objek
+
+// Sudut servo capit
+const int SUDUT_JEPIT = 95;
+const int SUDUT_BUKA  = 0;
+
+// Pin sensor garis 5 channel (kiri luar -> kanan luar)
+const int PIN_SENSOR[5] = {A4, A3, A2, A1, A0};
+
+// 2. PARAMETER KECEPATAN (PWM 0 - 255) & WAKTU
+const int BASE_KIRI  = 125;
+const int BASE_KANAN = 115;
+const int SPEED_PUTAR = 140;
+const int SPEED_FOKUS = 110;
+
+const int JEDA_MAJU_SUDUT        = 60;
+const int DURASI_SPIN_KANAN_DROP = 550;
+const unsigned long TIMEOUT_PUTAR = 1500;
+const unsigned long TIMEOUT_FOKUS = 600;
+
+// Memori arah terakhir: 0 = lurus, 1 = kiri, 2 = kanan
+int memori_arah = 0;
+
+// 3. SETUP
+void setup() {
+  for (int i = 0; i < 5; i++) pinMode(PIN_SENSOR[i], INPUT);
+  pinMode(SENSOR_OBJEK, INPUT);
+
+  gripper.attach(PIN_SERVO);
+  gripper.write(SUDUT_BUKA);   // Capit mulai dalam keadaan terbuka
+
+  berhenti();
+  delay(1500);                 // Jeda persiapan
+}
+
+// 4. LOOP UTAMA
+void loop() {
+  // Jika ada objek di capit, jalankan pick & place
+  if (digitalRead(SENSOR_OBJEK) == OBJEK_TERDETEKSI) {
+    aksi_pick_and_place();
+  }
+
+  switch (bacaSensor()) {
+    case 0b11111:                       // Garis finish -> berhenti
+      berhenti();
+      while (true) {}
+      break;
+
+    case 0b00100:                       // Lurus
+    case 0b01110:
+      lurus();
+      memori_arah = 0;
+      break;
+
+    case 0b11100:                       // Belokan siku 90 derajat kiri
+    case 0b11110:
+      putar90(1);
+      memori_arah = 0;
+      break;
+
+    case 0b00111:                       // Belokan siku 90 derajat kanan
+    case 0b01111:
+      putar90(2);
+      memori_arah = 0;
+      break;
+
+    case 0b01100:                       // Koreksi ke kiri
+      gerak(BASE_KIRI - 30, BASE_KANAN);   // halus
+      memori_arah = 1;
+      break;
+    case 0b01000:
+      gerak(BASE_KIRI - 70, BASE_KANAN);   // sedang
+      memori_arah = 1;
+      break;
+    case 0b11000:
+    case 0b10000:
+      gerak(0, BASE_KANAN + 20);           // tajam
+      memori_arah = 1;
+      break;
+
+    case 0b00110:                       // Koreksi ke kanan
+      gerak(BASE_KIRI, BASE_KANAN - 30);   // halus
+      memori_arah = 2;
+      break;
+    case 0b00010:
+      gerak(BASE_KIRI, BASE_KANAN - 75);   // sedang
+      memori_arah = 2;
+      break;
+    case 0b00011:
+    case 0b00001:
+      gerak(BASE_KIRI + 20, 0);            // tajam
+      memori_arah = 2;
+      break;
+
+    case 0b00000:                       // Lepas jalur -> ikuti arah terakhir
+      if (memori_arah == 1)      gerak(0, BASE_KANAN + 20);
+      else if (memori_arah == 2) gerak(BASE_KIRI + 20, 0);
+      else                       lurus();
+      break;
+  }
+}
+
+// 5. PICK & PLACE
+void aksi_pick_and_place() {
+  berhenti();
+  delay(100);
+
+  gripper.write(SUDUT_JEPIT);          // 1. Jepit objek
+  delay(500);
+
+  gerak(SPEED_PUTAR, -SPEED_PUTAR);    // 2. Spin kanan ke drop zone
+  delay(DURASI_SPIN_KANAN_DROP);
+  berhenti();
+  delay(100);
+
+  lurus();                             // 3. Maju ke drop zone
+  delay(500);
+  berhenti();
+  delay(150);
+
+  gripper.write(SUDUT_BUKA);           // 4. Lepas objek
+  delay(500);
+
+  gerak(-BASE_KIRI, -BASE_KANAN);      // 5. Mundur sebentar
+  delay(500);
+  berhenti();
+  delay(150);
+
+  gerak(-SPEED_PUTAR, SPEED_PUTAR);    // 6. Spin kiri sampai sensor tengah kena garis
+  unsigned long mulai = millis();
+  while (!(bacaSensor() & 0b00100) && (millis() - mulai < TIMEOUT_PUTAR)) {}
+  berhenti();
+  delay(30);
+
+  fokus_tengah(1);                     // 7. Luruskan di garis & lanjut
+  memori_arah = 0;
+  delay(200);
+}
+
+// 6. FUNGSI SENSOR
+// Menggabungkan 5 sensor menjadi 1 angka biner (1 = garis hitam)
+int bacaSensor() {
+  int hasil = 0;
+  for (int i = 0; i < 5; i++) {
+    hasil = (hasil << 1) | !digitalRead(PIN_SENSOR[i]);
+  }
+  return hasil;
+}
+
+// 7. FUNGSI GERAK
+// Atur 1 motor: speed > 0 maju, speed < 0 mundur, speed = 0 lepas
+void setMotor(AF_DCMotor &motor, int speed, uint8_t arahMaju, uint8_t arahMundur) {
+  if (speed == 0) {
+    motor.run(RELEASE);
+    return;
+  }
+  motor.setSpeed(abs(speed));
+  motor.run(speed > 0 ? arahMaju : arahMundur);
+}
+
+// Atur kedua motor sekaligus
+void gerak(int kiri, int kanan) {
+  setMotor(motorKiri,  kiri,  KIRI_MAJU,  KIRI_MUNDUR);
+  setMotor(motorKanan, kanan, KANAN_MAJU, KANAN_MUNDUR);
+}
+
+void lurus()    { gerak(BASE_KIRI, BASE_KANAN); }
+void berhenti() { gerak(0, 0); }
+
+// Putar di tempat pelan untuk meluruskan robot ke garis
+void fokus_tengah(int arah) {
+  unsigned long mulai = millis();
+
+  while (millis() - mulai < TIMEOUT_FOKUS) {
+    int k = bacaSensor();
+    if (k == 0b00100) break;                    // Sudah tepat di tengah
+
+    bool garisDiKiri  = (k & 0b11000) && !(k & 0b00011);
+    bool garisDiKanan = (k & 0b00011) && !(k & 0b11000);
+
+    if (garisDiKiri)                    gerak(-SPEED_FOKUS, SPEED_FOKUS);
+    else if (garisDiKanan)              gerak(SPEED_FOKUS, -SPEED_FOKUS);
+    else if (k == 0b00000)              (arah == 1) ? gerak(-SPEED_FOKUS, SPEED_FOKUS)
+                                                    : gerak(SPEED_FOKUS, -SPEED_FOKUS);
+    else break;
+  }
+  berhenti();
+}
+
+// Belok siku 90 derajat. arah: 1 = kiri, 2 = kanan
+void putar90(int arah) {
+  lurus();
+  delay(JEDA_MAJU_SUDUT);
+
+  if (arah == 1) gerak(-SPEED_PUTAR, SPEED_PUTAR);
+  else           gerak(SPEED_PUTAR, -SPEED_PUTAR);
+
+  unsigned long mulai = millis();
+  while ((bacaSensor() & 0b00100) && (millis() - mulai < TIMEOUT_PUTAR)) {}   // keluar dari garis lama
+  while (!(bacaSensor() & 0b00100) && (millis() - mulai < TIMEOUT_PUTAR)) {}  // cari garis baru
+
+  berhenti();
+  delay(30);
+  fokus_tengah(arah);
+}
+</script>
+
+<script>
+const $=i=>document.getElementById(i),cv=$('cv'),g=cv.getContext('2d');
+const W=2000,H=1000,BW=120,VMAX=310,SRC=$('src').textContent.trim(),ed=$('ed');
+ed.value=SRC;
+const cst=(v,a,b)=>Math.max(a,Math.min(b,v));
+/* ---------- lintasan ---------- */
+const TR={curve:{pl:null,fin:[[1700,560],[1700,680]]},siku:{pl:[[[100,500],[700,500],[700,250],[1300,250],[1300,700],[1700,700]]],fin:[[1700,640],[1700,760]]}};
+let segs=[];
+function track(k){const t=TR[k];
+  if(!t.pl){const c=[[100,500],[500,500],[800,500],[1000,380],[1250,380],[1450,620],[1600,620],[1700,620]],Q=[c[0],...c,c[c.length-1]],p=[];
+    for(let i=1;i<Q.length-2;i++)for(let u=0;u<1;u+=.1){const[a,b,e,d]=[Q[i-1],Q[i],Q[i+1],Q[i+2]];p.push([0,1].map(n=>.5*(2*b[n]+(-a[n]+e[n])*u+(2*a[n]-5*b[n]+4*e[n]-d[n])*u*u+(-a[n]+3*b[n]-3*e[n]+d[n])*u**3)))}
+    p.push(c[c.length-1]);t.pl=[p]}
+  t.cur=k;segs=[];window.curTrack=t;[...t.pl,t.fin].forEach(p=>{for(let i=0;i<p.length-1;i++)segs.push([...p[i],...p[i+1]])})}
+function dTrack(x,y){let m=1e9;for(const[ax,ay,bx,by]of segs){const dx=bx-ax,dy=by-ay;let t=cst(((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy),0,1);const d=Math.hypot(x-ax-t*dx,y-ay-t*dy);if(d<m)m=d}return m}
+/* ---------- state ---------- */
+const hw={lw:20,sp:15,rng:50,trim:1.09,so:20};
+let R={},cubes=[{x:450,y:500,hx:450,hy:500,a:0,held:false}],run=false,T=0,co=null,API=null,trail=[],tick=0,place=false,drag=null,spd=1,fnName='-';
+const mot={3:0,4:0},ms=()=>Math.round(T*1000);
+function out(s,c){const d=document.createElement('div');if(c)d.className=c;d.textContent=s;$('ser').appendChild(d);$('ser').scrollTop=1e9}
+function reset(){R={x:150,y:500,th:0,sv:0,tg:0,warn:0};cubes.forEach(c=>{c.x=c.hx;c.y=c.hy;c.a=0;c.held=false});T=0;mot[3]=mot[4]=0;trail=[];fnName='-'}
+const fw=()=>[Math.cos(R.th),Math.sin(R.th),-Math.sin(R.th),Math.cos(R.th)];
+function lineS(i){const[f0,f1,r0,r1]=fw(),lo=(i-2)*hw.sp;return dTrack(R.x+f0*hw.so+r0*lo,R.y+f1*hw.so+r1*lo)<=hw.lw/2?1:0}
+function objS_(){const[f0,f1,r0,r1]=fw();return cubes.some(c=>{if(c.held)return false;const dx=c.x-R.x,dy=c.y-R.y,fx=dx*f0+dy*f1,ly=dx*r0+dy*r1;return fx-20<=105+hw.rng&&fx+20>=105&&Math.abs(ly)<=32})?0:1}
+/* ---------- runtime Arduino virtual ---------- */
+class AF_DCMotor{constructor(p){this.p=p;this.s=0}setSpeed(s){this.s=cst(s,0,255)}run(d){mot[this.p]=d===1?this.s:d===2?-this.s:0}}
+class Servo{attach(){}write(a){R.tg=a}}
+const RT={F:s=>s,Serial:{begin(){},print(){},println:s=>out('['+(T).toFixed(2)+'s] '+s)},millis:ms,
+  digitalRead:p=>p===19?objS_():(p>=14&&p<=18?(lineS(4-(p-14))?0:1):0),pinMode(){},abs:Math.abs,constrain:cst,AF_DCMotor,Servo,
+  *delay(n){const t=ms();while(ms()-t<n)yield},__fn:n=>{fnName=n},
+  HIGH:1,LOW:0,INPUT:0,OUTPUT:1,FORWARD:1,BACKWARD:2,RELEASE:3,A0:14,A1:15,A2:16,A3:17,A4:18,A5:19};
+/* ---------- penerjemah C++ -> JavaScript ---------- */
+const TY='(?:const\\s+)?\\b(?:unsigned\\s+long|uint8_t|bool|int|float|byte)\\s+(?=\\w)';
+function mc(s,i,o,c){let d=0;for(;i<s.length;i++){if(s[i]===o)d++;else if(s[i]===c&&--d===0)return i}return -1}
+function tp(t){
+  t=t.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,'').replace(/^\s*#include.*$/gm,'').replace(/^\s*#define\s+(\w+)\s+(\S+)\s*$/gm,'var $1=$2;');
+  t=t.replace(/(?:const\s+)?(?:int|byte|uint8_t)\s+(\w+)\s*\[\s*\d*\s*\]\s*=\s*\{([^}]*)\}/g,'var $1=[$2]').replace(/AF_DCMotor\s+(\w+)\s*\((\d+)\)/g,'var $1=new AF_DCMotor($2)').replace(/\bServo\s+(\w+)\s*;/g,'var $1=new Servo();');
+  const fs=[],re=/\b(?:void|int|bool|float|unsigned\s+long)\s+(\w+)\s*\(([^)]*)\)\s*\{/g;let m;
+  while(m=re.exec(t)){const o=m.index+m[0].length-1,e=mc(t,o,'{','}');if(e<0)throw Error('kurung { } tidak seimbang');fs.push({n:m[1],p:m[2],s:m.index,o,e,b:t.slice(o+1,e)});re.lastIndex=e}
+  const G=new Set();for(let ch=1;ch;){ch=0;fs.forEach(f=>{if(!G.has(f.n)&&(/\bdelay\s*\(|\bwhile\s*\(/.test(f.b)||[...G].some(n=>new RegExp('\\b'+n+'\\s*\\(').test(f.b)))){G.add(f.n);ch=1}})}
+  for(let k=fs.length-1;k>=0;k--){const f=fs[k];let b=f.b.replace(/\bdelay\s*\(/g,'yield* delay(');
+    G.forEach(n=>{b=b.replace(new RegExp('\\b'+n+'\\s*\\(','g'),'yield* '+n+'(')});
+    const r2=/\bwhile\s*\(/g;let w;while(w=r2.exec(b)){const c=mc(b,w.index+w[0].length-1,'(',')'),q=c<0?null:b.slice(c+1).match(/^\s*\{/);if(q){const ip=c+1+q[0].length;b=b.slice(0,ip)+' yield;'+b.slice(ip);r2.lastIndex=ip}}
+    b=b.replace(/\((?:int|long|unsigned long)\)\s*/g,'0|');
+    const ps=f.p.replace(/(?:const\s+)?(?:unsigned\s+long|uint8_t|AF_DCMotor|int|bool|float|byte)\s*&?\s*/g,'');
+    t=t.slice(0,f.s)+(G.has(f.n)?'function* ':'function ')+f.n+'('+ps+'){'+(G.has(f.n)?"__fn('"+f.n+"');":'')+b+'}'+t.slice(f.e+1)}
+  return t.replace(new RegExp(TY,'g'),'var ')}
+function build(){try{
+  const js=tp(ed.value),f=new Function(...Object.keys(RT),js+';return {setup:typeof setup==="function"?setup:null,loop:typeof loop==="function"?loop:null,mem:()=>typeof memori_arah==="undefined"?0:memori_arah,pat:()=>typeof bacaSensor==="function"?bacaSensor():0}'),a=f(...Object.values(RT));
+  if(!a.setup||!a.loop)throw Error('setup() dan loop() harus ada');return a}
+  catch(e){out('error: '+e.message,'e');return null}}
+function* runf(f){const r=f();if(r&&typeof r.next==='function')yield* r}
+function load(go){const a=build();if(!a)return false;API=a;reset();co=(function*(){yield* runf(a.setup);while(true){yield* runf(a.loop);yield}})();run=go;sync();return true}
+/* ---------- fisika ---------- */
+function phys(dt){
+  const dz=v=>Math.abs(v)<40?0:v,vl=dz(mot[3])/255*VMAX,vr=dz(-mot[4])/255*VMAX*hw.trim;
+  R.th+=(vl-vr)/BW*dt;const v=(vl+vr)/2;R.x=cst(R.x+Math.cos(R.th)*v*dt,30,W-30);R.y=cst(R.y+Math.sin(R.th)*v*dt,30,H-30);
+  const d=250*dt;R.sv+=cst(R.tg-R.sv,-d,d);
+  const gap=70-cst(R.sv/95,0,1)*32,[f0,f1,r0,r1]=fw(),h=cubes.find(c=>c.held);
+  if(!h&&gap<=42){let b=null,bd=1e9;cubes.forEach(c=>{const dx=c.x-R.x,dy=c.y-R.y,fx=dx*f0+dy*f1,ly=dx*r0+dy*r1;if(fx>85&&fx<180&&Math.abs(ly)<32&&fx<bd){bd=fx;b=c}});
+    if(b)b.held=true;else if(!R.warn){R.warn=1;out('! capit menutup tapi tidak ada kubus di dalamnya','e')}}
+  if(h&&gap>46)h.held=false;if(gap>46)R.warn=0;
+  cubes.forEach(c=>{if(c.held){c.x=R.x+f0*125;c.y=R.y+f1*125;c.a=R.th}});
+  if(++tick%6===0&&trail.length<5000)trail.push([R.x,R.y])}
+function step(){T+=.005;try{if(co.next().done)run=false}catch(e){out('runtime error: '+e.message,'e');run=false;sync()}phys(.005)}
+/* ---------- gambar ---------- */
+function draw(){
+  g.fillStyle='#f7f9f8';g.fillRect(0,0,W,H);g.strokeStyle='#e0e8e6';g.lineWidth=2;
+  for(let x=0;x<=W;x+=100){g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}
+  for(let y=0;y<=H;y+=100){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()}
+  const t=curTrack;g.lineJoin='round';g.lineCap='butt';g.strokeStyle='#14191c';g.lineWidth=hw.lw;
+  [...t.pl,t.fin].forEach(p=>{g.beginPath();p.forEach((q,i)=>i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]));g.stroke()});
+  g.fillStyle='#14262c';g.font='600 26px "Segoe UI",sans-serif';g.fillText('Mulai',70,440);g.fillText('Finish (11111)',1560,t.fin[0][1]-20);
+  if($('cTrail').checked&&trail.length>1){g.strokeStyle='rgba(36,71,214,.45)';g.lineWidth=4;g.beginPath();trail.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke()}
+  cubes.forEach(c=>{g.save();g.translate(c.x,c.y);g.rotate(c.a);g.fillStyle='#e3a21a';g.fillRect(-20,-20,40,40);g.strokeStyle='#8a5f06';g.lineWidth=3;g.strokeRect(-20,-20,40,40);g.restore()});
+  g.save();g.translate(R.x,R.y);g.rotate(R.th);const o=objS_()===0;
+  g.fillStyle=o?'rgba(214,64,47,.22)':'rgba(36,71,214,.14)';g.beginPath();g.moveTo(105,0);g.lineTo(105+hw.rng,-14);g.lineTo(105+hw.rng,14);g.closePath();g.fill();
+  g.fillStyle='#222';g.fillRect(-25,-72,50,18);g.fillRect(-25,54,50,18);
+  g.fillStyle='#ef7b2a';g.beginPath();g.roundRect(-50,-52,130,104,10);g.fill();
+  g.fillStyle='#14262c';g.fillRect(55,-14,30,28);g.font='700 20px sans-serif';g.fillText('UNO',-34,7);
+  const gap=70-cst(R.sv/95,0,1)*32;g.fillRect(100,-gap/2-7,62,7);g.fillRect(100,gap/2,62,7);
+  g.fillStyle='#2b3b40';g.fillRect(hw.so-5,-45,10,90);
+  for(let i=0;i<5;i++){g.fillStyle=lineS(i)?'#ff3b2a':'#5a3a36';g.beginPath();g.arc(hw.so-2,(i-2)*hw.sp,4,0,7);g.fill()}
+  g.fillStyle=o?'#d6402f':'#2447d6';g.fillRect(100,-4,8,8);g.restore()}
+/* ---------- UI ---------- */
+function bar(id,v){const e=$(id),w=Math.abs(v)/255*50;e.style.width=w+'%';e.style.left=(v>=0?50:50-w)+'%';e.style.background=v<0?'#d6402f':'#1f9d6b'}
+function sync(){$('bRun').textContent=run?'Jeda':'Mulai'}
+function ui(){
+  const l=mot[3],r=-mot[4];$('vSt').textContent=fnName;
+  let p=0;try{p=API.pat()}catch(e){}$('vErr').textContent=p.toString(2).padStart(5,'0')+' / '+(API?API.mem():0);
+  $('vL').textContent=l;$('vR').textContent=r;bar('mL',l);bar('mR',r);$('vSv').textContent=Math.round(R.sv)+'°';$('vT').textContent=T.toFixed(1)+' s';
+  const ls=document.querySelectorAll('#leds .led');for(let i=0;i<5;i++)ls[i].classList.toggle('on',!!lineS(i));ls[5].classList.toggle('on',objS_()===0)}
+$('leds').innerHTML='<i class="led"></i>'.repeat(5)+'<i class="led obj"></i>';
+const SL=[['so','Jarak sensor garis dari poros roda','mm',20,100,5],['lw','Lebar garis','mm',8,40,1],['sp','Jarak antar sensor','mm',8,25,1],['rng','Jangkauan sensor objek','mm',20,100,5],['trim','Gain motor kanan (1,09 = lurus dengan 125/115)','×',.8,1.2,.01]];
+$('sl').innerHTML=SL.map(s=>`<div><label for="h_${s[0]}">${s[1]} <output id="o_${s[0]}">${hw[s[0]]} ${s[2]}</output></label><input id="h_${s[0]}" type="range" min="${s[3]}" max="${s[4]}" step="${s[5]}" value="${hw[s[0]]}"></div>`).join('');
+SL.forEach(s=>$('h_'+s[0]).oninput=e=>{hw[s[0]]=+e.target.value;$('o_'+s[0]).textContent=hw[s[0]]+' '+s[2]});
+const QK=[['BASE_KIRI',0,255,1],['BASE_KANAN',0,255,1],['SPEED_PUTAR',0,255,1],['SPEED_FOKUS',0,255,1],['JEDA_MAJU_SUDUT',0,300,5],['DURASI_SPIN_KANAN_DROP',100,1200,10],['SUDUT_JEPIT',40,130,1]];
+$('qk').innerHTML=QK.map(q=>`<div><label for="q_${q[0]}">${q[0]} <output id="oq_${q[0]}"></output></label><input id="q_${q[0]}" type="range" min="${q[1]}" max="${q[2]}" step="${q[3]}"></div>`).join('');
+function syncQ(){QK.forEach(q=>{const m=ed.value.match(new RegExp('\\b'+q[0]+'\\s*=\\s*(-?\\d+)'));if(m){$('q_'+q[0]).value=m[1];$('oq_'+q[0]).textContent=m[1]}})}
+QK.forEach(q=>{const s=$('q_'+q[0]);s.oninput=()=>$('oq_'+q[0]).textContent=s.value;
+  s.onchange=()=>{ed.value=ed.value.replace(new RegExp('(\\b'+q[0]+'\\s*=\\s*)-?\\d+'),'$1'+s.value);gut();$('ser').innerHTML='';load(true)}});
+const KW=/^(void|int|const|if|else|switch|case|break|while|for|return|bool|float|unsigned|long|uint8_t|byte|char|true|false|enum|continue|default|static|AF_DCMotor|Servo)$/,CN=/^(HIGH|LOW|INPUT|OUTPUT|FORWARD|BACKWARD|RELEASE|A[0-5])$/,BI=/^(setup|loop|pinMode|digitalRead|digitalWrite|analogRead|delay|millis|abs|constrain|attach|write|run|setSpeed|begin|println|print|Serial|F)$/;
+function hl(t){const e=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'),u=new Set([...t.matchAll(/\b(?:void|int|bool|float|long)\s+(\w+)\s*\(/g)].map(m=>m[1])),w=(c,x)=>'<i class="'+c+'">'+e(x)+'</i>';
+  return t.replace(/(\/\/.*|\/\*[\s\S]*?\*\/)|(^[ \t]*#\w+[^\n\/]*)|("(?:[^"\\\n]|\\.)*")|\b(0b[01]+|0x[\da-fA-F]+|\d+\.?\d*)\b|\b([A-Za-z_]\w*)\b|([&<>])/gm,(m,c,p,s,n,i,o)=>c?w('c',c):p?w('p',p):s?w('s',s):n?w('v',n):o?e(o):!i?m:KW.test(i)?w('k',i):CN.test(i)?w('n',i):BI.test(i)?w('b',i):u.has(i)?w('u',i):i)}
+function gut(){$('gut').textContent=ed.value.split('\n').map((_,i)=>i+1).join('\n');$('hl').innerHTML=hl(ed.value)+'\n'}
+$('bRun').onclick=()=>{run=!run;sync()};
+$('bReset').onclick=()=>{$('ser').innerHTML='';load(false);out('Reset. Tekan Mulai.','t')};
+$('bAdd').onclick=()=>{place=!place;$('bAdd').classList.toggle('on',place);cv.style.cursor=place?'crosshair':'default'};
+$('bClear').onclick=()=>{cubes=[]};
+$('sSpd').onchange=e=>spd=+e.target.value;
+$('sTrk').onchange=e=>{track(e.target.value);$('ser').innerHTML='';load(false)};
+$('bVer').onclick=()=>{if(build())out('Verify OK: sketch berhasil diterjemahkan dan siap di-upload.','t')};
+$('bUp').onclick=()=>{$('ser').innerHTML='';out('Upload selesai. Robot reset.','t');syncQ();load(true)};
+$('bOrig').onclick=()=>{ed.value=SRC;gut();syncQ()};
+ed.oninput=gut;ed.onscroll=()=>{$('gut').scrollTop=ed.scrollTop;$('hl').scrollTop=ed.scrollTop;$('hl').scrollLeft=ed.scrollLeft};
+ed.onkeydown=e=>{if(e.key==='Tab'){e.preventDefault();ed.setRangeText('  ',ed.selectionStart,ed.selectionEnd,'end')}};
+const wp=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]};
+cv.onpointerdown=e=>{const[x,y]=wp(e);
+  if(place){cubes.push({x,y,hx:x,hy:y,a:0,held:false});place=false;$('bAdd').classList.remove('on');cv.style.cursor='default';return}
+  drag=cubes.find(c=>!c.held&&Math.abs(c.x-x)<30&&Math.abs(c.y-y)<30)||null;if(drag)cv.setPointerCapture(e.pointerId)};
+cv.onpointermove=e=>{if(!drag)return;const[x,y]=wp(e);drag.x=drag.hx=x;drag.y=drag.hy=y};
+cv.onpointerup=()=>drag=null;
+let last=performance.now();
+function frame(n){const dt=Math.min(.1,(n-last)/1000);last=n;if(run){let a=dt*spd;while(a>=.005&&run){step();a-=.005}}draw();ui();requestAnimationFrame(frame)}
+track('curve');gut();syncQ();load(false);out('Tekan Mulai untuk menjalankan kode di robot.','t');requestAnimationFrame(frame);
+</script>
+</body>
+</html>
